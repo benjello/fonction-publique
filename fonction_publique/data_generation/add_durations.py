@@ -170,7 +170,7 @@ def add_grade_next_var(data):  # FIXME
 
 def add_year_of_entry_var(data):
     data['annee_entry'] = None
-    data.loc[(data['change_grade']) & (data['left_censored'] == False), 'annee_entry'] = data['annee'] + 1
+    data.loc[(data['change_grade'] == True) & (data['left_censored'] == False), 'annee_entry'] = data['annee'] + 1
     data['annee_entry_min'] = data.groupby('ident')['annee_entry'].transform(min)
     data['annee_entry_max'] = data.groupby('ident')['annee_entry'].transform(max)
     for col in ['annee_entry_min', 'annee_entry_max']:
