@@ -3,6 +3,8 @@
 
 from __future__ import division
 
+
+import ConfigParser
 import logging
 import os
 import re
@@ -42,9 +44,19 @@ grilles_txt_path = os.path.join(
     "neg_pour_ipp.txt",
     )
 
+focus_grille_xlsx_path = os.path.join(
+    grilles_path,
+    "corresp_neg_netneh_2018.xlsx",
+    )
+
 grilles_hdf_path = os.path.join(
     grilles_path,
     "grilles.h5",
+    )
+
+grilles_matching_hdf_path = os.path.join(
+    grilles_path,
+    "grilles_matching.h5",
     )
 
 table_correspondance_corps_path = os.path.join(
@@ -61,7 +73,11 @@ raw_directory_path = parser.get('data', 'raw')
 tmp_directory_path = parser.get('data', 'tmp')
 clean_directory_path = parser.get('data', 'clean')
 output_directory_path = parser.get('data', 'output')
-simulation_directory_path = parser.get('data', 'simulation')
+try:
+    simulation_directory_path = parser.get('data', 'simulation')
+except ConfigParser.NoOptionError:
+    log.info('Entry simulation in section data is absent. simulation_directory_path is not set')
+    simulation_directory_path = None
 
 
 # Options:

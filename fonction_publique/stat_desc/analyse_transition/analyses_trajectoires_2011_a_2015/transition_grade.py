@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Apr 24 16:52:25 2017
-
-@author: l.degalle
-"""
-
-# -*- coding: utf-8 -*-
 
 # Filters: individuals at least one time in the corps
 from __future__ import division
@@ -14,7 +7,6 @@ import os
 import pandas as pd
 import numpy as np
 from fonction_publique.base import raw_directory_path, get_careers, parser
-from fonction_publique.merge_careers_and_legislation import get_grilles, law_to_hdf
 from slugify import slugify
 import matplotlib.pyplot as plt
 
@@ -25,11 +17,11 @@ libelles_emploi_directory = parser.get('correspondances',
 save_path = 'M:/CNRACL/output'
 
 data_AT = pd.read_csv(
-        os.path.join(save_path,"corps_AT_2011_w_echelon_conditions.csv")
-        )
+    os.path.join(save_path,"corps_AT_2011_w_echelon_conditions.csv")
+    )
 
-ids_full =  pd.DataFrame(data_AT.groupby(['ident'])['annee', 'trimestre'].count() == 20).reset_index()
-ids_full = ids_full.loc[(ids_full['annee'] == True) & ids_full['trimestre'] == True]
+ids_full = pd.DataFrame(data_AT.groupby(['ident'])['annee', 'trimestre'].count() == 20).reset_index()
+ids_full = ids_full.loc[(ids_full['annee']) & (ids_full['trimestre'])]
 
 data = data_AT.loc[data_AT['ident'].isin(ids_full['ident'])]
 data = data.set_index(['ident', 'annee', 'trimestre'])

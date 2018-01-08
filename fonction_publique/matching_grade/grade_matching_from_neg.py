@@ -34,7 +34,8 @@ def select_grade_neg_by_hand(versant = None, libelles_grade_NEG = None, grilles 
 
     Returns
     -------
-    grade_neg : tuple, (versant, grade, date d'effet) du grade correspondant
+    grade_neg : tuple  (versant, grade, date de début, date de fin) définissant une grille sur laquelle sont matchés
+    les libellés.
     '''
     assert versant in VERSANTS
     score_cutoff = 95
@@ -71,10 +72,12 @@ selection: """)
                         continue
                     elif selection2.isdigit() and int(selection2) in grades_neg.index:
                         grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
+                        print("Le grade {} a été choisi".format(grade_neg))
                         break
                 break
 
-    date_effet_grille = grilles.loc[
+    # TODO: ne pas prendre le min mais toutes les grilles possibles avec ce neg.
+    grilles = grilles.loc[
         grilles.libelle_grade_NEG == grade_neg
         ].date_effet_grille.min().strftime('%Y-%m-%d')
     libelle_FP = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
@@ -99,32 +102,25 @@ selection: """)
 def main():
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
-    new_year_versant = True
+    change_versant = True
 
     while True:
-        if new_year_versant:
-            print("Choix de l'année (date d'effet max)")
-            annee = raw_input("""
-        SAISIR UNE ANNEE
-        selection: """)
-            if annee in map(str, range(2000, 2015)):
-                print("Annee d'effet de la grille:{}".format(annee))
-            else:
-                print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
-                continue
-
+        if change_versant:
             print("Choix du versant")
             versant = raw_input(u"""
-        SAISIR UN VERSANT (T: territoriale, H: hospitaliere)
+        SAISIR UN VERSANT (T: territoriale, H: hospitaliere), OU QUITTER (q)
         selection: """)
             if versant in VERSANTS:
                 print("Versant de la grille:{}".format(versant))
+            elif versant == "q":
+                print("Quitting matching")
+                return
             else:
-                print("Versant saisi incorrect: {}. Choisir T ou H".format(versant))
+                print("Versant saisi incorrect: {}. Choisir T ou H (ou q)".format(versant))
                 continue
 
-        annee = int(annee)
-        grilles = get_grilles_cleaned(annee)
+        annee = 2014
+        grilles = get_grilles_cleaned(annee, versant, force_rebuild = True)
         print_stats(libemplois = libemplois, annee = annee, versant = versant)
         libelle_FP = 'FONCTION PUBLIQUE HOSPITALIERE' if versant == 'H' else 'FONCTION PUBLIQUE TERRITORIALE'  # noqa
         libelles_grade_NEG = grilles.query('libelle_FP == @libelle_FP')['libelle_grade_NEG'].unique()
@@ -138,6 +134,11 @@ def main():
             validate_and_save(correspondance_data_frame_path)
             return 'quit'
 
+#        print("Classer les libellés dans la grille {} ?".format(grade_triplet))
+#            new_versant = raw_input("""
+#         o: oui, n: non
+#        selection: """)
+
         what_next = select_libelle_from_grade_neg(
             grade_triplet = grade_triplet,
             annee = annee,
@@ -146,12 +147,12 @@ def main():
             )
 
         if what_next == 'next_libelle':
-            print("Changement de grade. Changer l'année ({}) et/ou le versant({}) ?".format(annee, versant))
-            new_year = raw_input("""
+            print("Changement de grade. Changer le versant({}) ?".format(versant))
+            new_versant = raw_input("""
          o: oui, n: non
         selection: """)
-            if new_year == "n":
-                new_year_versant = False
+            if new_versant == "n":
+                change_versant = False
             continue
 
         if what_next == 'quit':

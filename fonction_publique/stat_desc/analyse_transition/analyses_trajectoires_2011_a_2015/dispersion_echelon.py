@@ -7,7 +7,6 @@ import os
 import pandas as pd
 import numpy as np
 from fonction_publique.base import raw_directory_path, get_careers, parser
-from fonction_publique.merge_careers_and_legislation import get_grilles, law_to_hdf
 from slugify import slugify
 import matplotlib.pyplot as plt
 
@@ -62,7 +61,7 @@ for i in range(len(list_min)):
     plt.xticks(range(0, 60, 2), rotation=90)
     print min_mois
     print count_trimestre['n_mois'].value_counts()
-    
+
 plt.savefig(
     os.path.join(fig_save_path, 'graph_disp_min_duree_echelon.png'),
     bbox_inches='tight'
@@ -71,7 +70,7 @@ plt.savefig(
 
 list_max = [36, 24, 48, 12]
 list_max.sort()
-    
+
 fig = plt.figure(figsize=(18, 18), dpi=100, facecolor='w', edgecolor='k')
 for i in range(len(list_max)):
     max_mois = list_max[i]
@@ -110,7 +109,7 @@ fig = plt.figure(figsize=(18, 18), dpi=100, facecolor='w', edgecolor='k')
 for i in range(len(data_min_max)):
     data = data_min_max.iloc[i]
     min_mois = data[0]
-    max_mois = data[1]  
+    max_mois = data[1]
     data = data_AT.query(
             '(min_mois == {}) & (max_mois == {})'.format(min_mois, max_mois)
             )

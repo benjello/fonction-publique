@@ -21,10 +21,9 @@ load_and_clean = function(data_path, dataname)
   ## Variables creation ####
 
   # Format bolean                     
-  to_bolean = c("change_grade", "right_censored", "left_censored_min", "left_censored_max")
+  to_bolean = c("change_grade", "right_censored")
   data_long[, to_bolean] <- sapply(data_long[, to_bolean], as.logical)
   
-  data_long$left_censored = data_long$left_censored_min  # pas de différenciation sur min/max car on filtre sur le plus exigeant
   data_long$observed  = ifelse(data_long$right_censored == 1, 0, 1) 
   data_long$echelon_2011 = ave(data_long$echelon*(data_long$annee == 2011), data_long$ident, FUN = max)
   data_long$last_y_in_grade = data_long$annee_exit - 1

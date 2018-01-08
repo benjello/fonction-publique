@@ -103,6 +103,7 @@ def get_grilles_cleaned(annee=None):
     grilles = get_grilles(
         date_effet_max = "{}-12-31".format(annee),
         subset = ['libelle_FP', 'libelle_grade_NEG'],
+        force_rebuild = True
         )
     # Analyse des doublons
     #libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())
@@ -340,7 +341,6 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
     return libemplois
 
 
-
 def select_corps(libelle_saisi = None, annee = None, versant = None):
     '''
     Sélectionne le corps dans la liste des corps dans le versant idoine
@@ -373,6 +373,8 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
     Arguments
     ---------
     grade_triplet : tuple (versant, annee, grade), grade de la nomenclature choisi à l'étape précédente
+
+
     libemplois :  list, libellés classés par versant, annee, frequence
 
     Returns
@@ -548,8 +550,6 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         )
 
 
-
-
 def print_stats(libemplois = None, annee = None, versant = None):
     correspondance_data_frame = get_correspondance_data_frame(which = 'grade')[
         ['versant', 'annee', 'date_effet', 'libelle']
@@ -587,7 +587,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
     result.selectionnes = result.selectionnes.astype(int)
     result['pct_pondere'] = 100 * result.selectionnes_ponderes / result.total_ponderes
     result['pct'] = 100 * result.selectionnes / result.total
-    print(result.sort(ascending = False))
+    print(result.sort_index(ascending = False))
 
     #     print("""
     # Pondéré:

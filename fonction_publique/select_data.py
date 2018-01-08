@@ -15,7 +15,6 @@ import pkg_resources
 import pandas as pd
 import numpy as np
 from fonction_publique.base import raw_directory_path, get_careers, parser
-from fonction_publique.merge_careers_and_legislation import get_grilles, law_to_hdf
 
 
 libelles_emploi_directory = parser.get('correspondances',

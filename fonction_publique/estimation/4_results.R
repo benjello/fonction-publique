@@ -10,7 +10,7 @@
 
 source(paste0(wd, "0_Outils_CNRACL.R")) 
 # Load results
-load(paste0(simul_path, "predictions8_min.Rdata"))
+load(paste0(simul_path, "predictions7_min.Rdata"))
 
 ## NEW FILTER: à déplacer dans select_data
 list_id = unique(output_global$ident[which(output_global$echelon == -1)])
@@ -371,7 +371,7 @@ table_gain_ib = function(data, var_ib, var_situation, var_grade, details = F)
   data$gain_ib = data$next_ib - data$var_ib
   data$I_gain = ifelse(data$gain_ib >0, 1, 0)
   data$gain_ib_pct = 100*(data$gain_ib)/data$var_ib
-  data = data[which(data$annee < 2012),]
+  data = data[which(data$annee < 2015),]
   
   table = numeric(21)
   

@@ -22,6 +22,7 @@ data_stat = data_stat_max
 datai     =  data_min[which(data_min$annee == 2011),]
 
 
+
 ##### I. Sample description ##### 
 
 ## I.1 Sample  ####

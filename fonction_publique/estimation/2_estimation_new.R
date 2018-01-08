@@ -17,13 +17,13 @@
 
 # Main data
 source(paste0(wd, "0_Outils_CNRACL.R"))
-datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_final.csv")
 data_max = datasets[[1]]
 data_min = datasets[[2]]
 
 # Sample selection
 data_est = data_min
-data_est = data_est[which(data_est$left_censored == F & data_est$annee == 2011 & data_est$generation < 1990),]
+data_est = data_est[which(data_est$annee == 2011 & data_est$generation < 1990),]
 data_est = create_variables(data_est)  
 
 

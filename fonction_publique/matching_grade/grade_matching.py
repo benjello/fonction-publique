@@ -66,23 +66,29 @@ def get_correspondance_data_frame(which = None):
         return data_frame
 
 
-def get_grilles_cleaned(annee = None, versant = None):
+def get_grilles_cleaned(annee = None, versant = None, force_rebuild = False, subset = None):
     '''
     Correction des doublons dans la grille initiale
+    TODO remove when cleaning
     '''
-    grilles = get_grilles(
-        date_effet_max = "{}-12-31".format(annee),
-        subset = ['libelle_FP', 'libelle_grade_NEG','code_grade_NEG'],
-        )
-    # Analyse des doublons
-    # libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())
-    # libelles_grade_NEG_2 = sorted(grilles[~grilles.libelle_grade_NEG.duplicated()].libelle_grade_NEG.tolist())
-    # list(set(libelles_grade_NEG_2) - set(libelles_grade_NEG_1))
-    # doublons1 = ['INFIRMIER DE CLASSE NORMALE (*)', 'INFIRMIER DE CLASSE NORMALE(*)']
-    # doublons2 = ['INFIRMIER DE CLASSE SUPERIEURE (*)', 'INFIRMIER DE CLASSE SUPERIEURE(*)']
-    # grilles[grilles.libelle_grade_NEG.isin(doublons1)]
-    # grilles[grilles.libelle_grade_NEG.isin(doublons2)]
-    # Suppression à la main
+
+    if subset is None:
+        subset = [
+            'code_grade_NEG',
+            'libelle_FP',
+            'libelle_grade_NEG',
+            ]
+    if annee is not None:
+        grilles = get_grilles(
+            date_effet_max = "{}-12-31".format(annee),
+            subset = subset,
+            force_rebuild = force_rebuild,
+            )
+    else:
+        grilles = get_grilles(
+            subset = subset,
+            force_rebuild = force_rebuild
+            )
     grilles.loc[
         grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE NORMALE (*)', 'libelle_grade_NEG'
         ] = 'INFIRMIER DE CLASSE NORMALE(*)'
@@ -123,7 +129,7 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
 
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     u'''
-    A partir de libelés observés, va chercher les 50 libellés les plus proches dans
+    A partir de libelés NETNEH observés, va chercher les 50 libellés les plus proches dans
     la liste des libellés officiels des grades. En l'absence de résultats, on abaisse le seuil.
 
     Parameters
@@ -220,12 +226,12 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
     score_cutoff = 95
 
     grilles = get_grilles_cleaned(annee, versant = versant)
-    
+
     unique_grilles = grilles.groupby(['libelle_grade_NEG', 'code_grade_NEG']).count()
     unique_grilles = unique_grilles.reset_index()
     libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
-            
-    
+
+
     while True:
         grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
         print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(libelle_saisi, score_cutoff, grades_neg))
@@ -585,11 +591,17 @@ def print_stats(libemplois = None, annee = None, versant = None):
         .query("libemploi_slugified != ''")  # On ne garde pas les libellés vides
         .merge(correspondance_data_frame)
         )
-    libelles_emploi_deja_renseignes = (merged_libemplois
-        .query('annee_start <= annee <= annee_stop')
-        .drop(['annee_start', 'annee_stop'], axis = 1)
-        .drop_duplicates()
-        )
+
+    if annee:
+        libelles_emploi_deja_renseignes = (merged_libemplois
+            .query('annee_start <= annee <= annee_stop')
+            .drop(['annee_start', 'annee_stop'], axis = 1)
+            )
+    else:
+        libelles_emploi_deja_renseignes = merged_libemplois
+
+    libelles_emploi_deja_renseignes = libelles_emploi_deja_renseignes.drop_duplicates()
+
     selectionnes = libelles_emploi_deja_renseignes.groupby(['annee', 'versant']).agg({
         'count': 'sum',
         'libemploi_slugified': 'count',
@@ -606,7 +618,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
     result.selectionnes = result.selectionnes.astype(int)
     result['pct_pondere'] = 100 * result.selectionnes_ponderes / result.total_ponderes
     result['pct'] = 100 * result.selectionnes / result.total
-    print(result.sort(ascending = False))
+    print(result.sort_index(ascending = False))
 
     #     print("""
     # Pondéré:

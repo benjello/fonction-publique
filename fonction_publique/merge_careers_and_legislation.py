@@ -9,16 +9,18 @@ import os
 import pandas as pd
 
 from fonction_publique.base import (DEBUG_CLEAN_CARRIERES, clean_directory_path, debug_chunk_size,
-    get_careers_hdf_path, get_output_hdf_path, get_tmp_hdf_path, grilles_hdf_path)  # , law_xls_path)
+    get_careers_hdf_path, get_output_hdf_path, get_tmp_hdf_path, grilles_matching_hdf_path, grilles_txt_path)
 from fonction_publique.career_simulation_vectorized import _set_dates_effet
+from fonction_publique.scripts.clean_grilles import build_clean_grille_for_matching
 
 log = logging.getLogger(__name__)
 
 
 def get_grilles(force_rebuild = False, date = None, date_effet_max = None, date_effet_min = None,
         subset = None, use_date_effet_index = False):
-    law_to_hdf(force_rebuild = force_rebuild)
-    grilles = pd.read_hdf(grilles_hdf_path)
+    build_clean_grille_for_matching(force_rebuild = force_rebuild)
+    log.info('Reading grilles for matching from {}'.format(grilles_matching_hdf_path))
+    grilles = pd.read_hdf(grilles_matching_hdf_path)
     grilles = grilles.loc[grilles.libelle_FP.isin(['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE'])]
     assert set(grilles.libelle_FP.unique()) == set(['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE'])
     if subset is not None:
@@ -44,49 +46,6 @@ def get_grilles(force_rebuild = False, date = None, date_effet_max = None, date_
         return grilles.reset_index()
 
 
-def law_to_hdf(force_rebuild = False):
-    """ Extract relevant data from grille and change to convenient dtype then save to HDFStore."""
-    if force_rebuild is True:
-        law = pd.read_table(
-            law_xls_path,
-            dtype = {
-                "code_grade_NEG": str,
-                "code_FP": int,
-                "libelle_FP": str,
-                "code_etat_grade": int,
-                "libelle_grade_NEG": str,
-                "categh": str,
-                "code_type_groupe": str,
-                "echelon": str,
-                "echelle": str,
-                "date_effet_grille": str,
-                "date_fin": str,
-                "ib": float,
-                "min_mois": float,
-                "max_mois": float,
-                "moy_mois": float,
-                "code_grade_NETNEH": str,
-                "type_grade": str,
-                })
-        law = law[[
-            'date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois',
-            'moy_mois', 'libelle_FP', 'libelle_grade_NEG', 'code_grade_NEG'
-            ]].copy()
-        law['date_effet_grille'] = pd.to_datetime(law.date_effet_grille)
-        for variable in ['ib', 'max_mois', 'min_mois', 'moy_mois']:
-            law[variable] = law[variable].fillna(-1).astype('int32')
-        law['code_grade'] = law['code_grade_NEG'].astype('str')
-        law = law[~law['ib'].isin([-1, 0])].copy()
-        law.to_hdf(grilles_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
-        return True
-    else:
-        if os.path.exists(grilles_hdf_path):
-            log.info('Using existing {}'.format(grilles_hdf_path))
-            return True
-        else:
-            law_to_hdf(force_rebuild = True)
-
-
 def get_libelles(code_grade_neg = None, code_grade_netneh = None, force_rebuild = False):
     # assert (code_grade_neg is not None) or (code_grade_netneh is not None)
     assert code_grade_netneh is not None
@@ -108,7 +67,7 @@ def get_careers_for_which_we_have_law(start_year = 2009, file_path = None, debug
      Save to HDFStore
      Returns stored DataFrame
      """
-    law = pd.read_hdf(grilles_hdf_path, 'grilles')
+    law = pd.read_hdf(grilles_matching_hdf_path, 'grilles')
     careers_hdf_path = get_careers_hdf_path(clean_directory_path = clean_directory_path,
         file_path = file_path, debug = debug)
     careers_hdf = pd.HDFStore(careers_hdf_path)
@@ -339,7 +298,7 @@ def fix_dtypes(careers):  # dtype change might be due to merge and solved in rec
 
 
 def main(source = None, force_rebuild = False, debug = DEBUG_CLEAN_CARRIERES):
-    law_to_hdf(force_rebuild = force_rebuild)
+    build_clean_grille_for_matching(force_rebuild = force_rebuild)
     if os.path.isfile(source):
         stata_files = [source]
     elif os.path.isdir(source):

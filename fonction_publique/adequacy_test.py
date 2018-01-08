@@ -5,7 +5,7 @@ Created on Tue Nov 08 13:26:31 2016
 @author: s.rabate
 
 grade_matching_adequacy.py
-Testing the quality of the matching between libelles and grade using the years for which we have 
+Testing the quality of the matching between libelles and grade using the years for which we have
 both the official grade and the libelles (2011-2014)
 
 """
@@ -45,19 +45,19 @@ if not os.path.exists(os.path.dirname(libelles_emploi_tmp_directory)):
 
 def get_true_correspondance(which = None, debug=False):
     """
-    Creation du dataframe de la même forme que correspondance avec les grades 
+    Creation du dataframe de la même forme que correspondance avec les grades
     réellement observés
     """
     list_dec = [1970,1980]
     for decennie in list_dec:
         libemploi = get_careers(variable = 'libemploi', decennie = decennie, debug = debug)
-        libemploi = libemploi[libemploi.annee>=2011]    
+        libemploi = libemploi[libemploi.annee>=2011]
         c_netneh = get_careers(variable = 'c_netneh', decennie = decennie, debug = debug)
         c_netneh = c_netneh[c_netneh.annee>=2011]
         statut = get_careers(variable = 'statut', decennie = decennie, debug = debug)
         statut = statut[statut.annee>=2011]
         libemploi = get_careers(variable = 'libemploi', decennie = decennie, debug = debug)
-        libemploi = libemploi[libemploi.annee>=2011] 
+        libemploi = libemploi[libemploi.annee>=2011]
         correspondance_obs = (libemploi.merge(
         statut.query("statut in ['T', 'H']"),
         how = 'inner',
@@ -66,22 +66,22 @@ def get_true_correspondance(which = None, debug=False):
         c_netneh.query("c_netneh != '' "),
         how = 'inner',
         ))
-    
+
         correspondance_obs['libemploi_slugified'] = correspondance_obs.libemploi.apply(slugify, separator = "_")
         # Dropping: libemploi without netneh
         correspondance_obs = correspondance_obs.drop(["ident","libemploi"], 1)
         if decennie == list_dec[0]:
             true_correspondance = correspondance_obs
-        else: 
+        else:
             true_correspondance = pd.concat([true_correspondance,correspondance_obs])
-    
-    true_correspondance = true_correspondance.drop_duplicates() 
+
+    true_correspondance = true_correspondance.drop_duplicates()
     true_correspondance = true_correspondance.sort(['libemploi_slugified'])
-            
-            
+
+
     return (true_correspondance)
 
-    
+
 def load_matched_correspondance(which = None):
     """
     Charge le data frame avec les libellés matchés dans le script grade_matching.py
@@ -116,20 +116,20 @@ def load_matched_correspondance(which = None):
         data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
         return data_frame
 
-        
+
 def get_grilles_cleaned(annee=None):
     '''
     Correction des doublons dans la grille initiale
-    '''         
+    '''
     grilles = get_grilles(
         date_effet_max = "{}-12-31".format(annee),
         subset = ['libelle_FP', 'libelle_grade_NEG'],
         )
-    # Analyse des doublons 
+    # Analyse des doublons
     grilles.loc[grilles.libelle_grade_NEG=='INFIRMIER DE CLASSE NORMALE (*)','libelle_grade_NEG']= 'INFIRMIER DE CLASSE NORMALE(*)'
     grilles.loc[grilles.libelle_grade_NEG=='INFIRMIER DE CLASSE SUPERIEURE (*)','libelle_grade_NEG']= 'INFIRMIER DE CLASSE SUPERIEURE(*)'
     return grilles
-    
+
 
 @timing
 def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = False):
@@ -191,7 +191,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
     result.selectionnes = result.selectionnes.astype(int)
     result['pct_pondere'] = 100 * result.selectionnes_ponderes / result.total_ponderes
     result['pct'] = 100 * result.selectionnes / result.total
-    print(result.sort(ascending = False))
+    print(result.sort_index(ascending = False))
 
     #     print("""
     # Pondéré:

@@ -26,7 +26,7 @@ set.seed(1234)
 
 generate_data_sim <- function(data_path, use = "min")
 {
-datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_final.csv")
 if (use == "max"){data = datasets[[1]]}
 if (use == "min"){data = datasets[[2]]}
 list_var = c("ident", "annee",  "sexe", "c_cir_2011", "generation", "an_aff", "grade", 
@@ -41,7 +41,7 @@ return(data_sim)
 
 generate_data_output <- function(data_path)
 {
-  dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv"
+  dataname = "filter/data_ATT_2011_filtered_after_duration_final.csv"
   filename = paste0(data_path, dataname)
   data_long = read.csv(filename)
   data_long$grade = data_long$c_cir
@@ -230,7 +230,8 @@ predict_next_year_seq_m2 <- function(data_sim, m1, m2, modelname)
 increment_data_sim <- function(data_sim, simul_py)
 {
   # Deleting individuals with pbl
-  if (length(data_sim$ident) != length(simul_py$ident) | length(which(is.na(simul_py$ib)) >0 )  | length(which(is.na(simul_py$grade)) >0 ))
+  if (length(data_sim$ident) != length(simul_py$ident) | length(which(is.na(simul_py$ib)) >0 )  | 
+      length(which(is.na(simul_py$grade)) >0 | length(which(!is.element(simul_py$echelon, seq(1,12))))>0 ))
   {
     
     list_pbl_id1 = unique(setdiff(data_sim$ident, simul_py$ident))
@@ -245,7 +246,14 @@ increment_data_sim <- function(data_sim, simul_py)
     list_pbl_grade = unique(simul_py$ident[which(is.na(simul_py$grade) | simul_py$grade == "nan")])
     print(paste0("Il y a ",length(list_pbl_grade)," individus dans la simul  avec grade = NA"))
     
-    deleted_id = Reduce(union, list(list_pbl_id1, list_pbl_id2, list_pbl_ib, list_pbl_grade))
+    list_pbl_echelon = unique(simul_py$ident[which(!is.element(simul_py$echelon, seq(1,12)))])
+    print(paste0("Il y a ",length(list_pbl_grade)," individus dans la simul  avec echelon bizarre"))
+    
+    
+    deleted_id = Reduce(union, list(list_pbl_id1, list_pbl_id2, list_pbl_ib, list_pbl_grade, list_pbl_echelon))
+    
+    stopifnot(length(deleted_id) == 0)
+    
     data_sim = data_sim[which(!is.element(data_sim$ident, deleted_id)), ]
     simul_py = simul_py[which(!is.element(simul_py$ident, deleted_id)), ]
     
@@ -336,6 +344,6 @@ for (m in 1:6)
   output_global = merge(output_global, output, by = c("ident", "annee"), all.x = T)
 }
 
-save(output_global, file = paste0(simul_path, "predictions9_min.Rdata"))
+save(output_global, file = paste0(simul_path, "predictions10.Rdata"))
 
 
