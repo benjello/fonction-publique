@@ -419,10 +419,12 @@ def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemp
         set(libelles_purges).difference(set(libelles))
         )
 
+
     libelles = libelles_purges
     next_libelle = False
     last_min_score = 100
-
+    grade_matched_on = grade
+    
     while True:
         if libelles_emploi_selectionnes:
             print("libellés emploi sélectionnés:")
@@ -432,8 +434,9 @@ def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemp
         if libelles_emploi_non_selectionnes and remove_not_chosen:
             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]
 
+
         libelles_emploi_additionnels = query_libelles_emploi(
-            query = grade,
+            query = grade_matched_on,
             choices = libelles,
             last_min_score = last_min_score,
             )
@@ -467,9 +470,12 @@ def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemp
         if show_annee_range:
             printed_columns.append('annee')
 
-        print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels[printed_columns]))
+        print("\nAutres libellés emploi possibles pour le grade {} (libelle utilise dans le matching: {}):\n{}".format(
+                grade, grade_matched_on,
+                libelles_emploi_additionnels[printed_columns]
+                ))
         selection = raw_input("""
-liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection),
+liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection), a (choix d'un autre libelle sur lequel matcher)
 q (quitter/libelle suivant), s (sauvegarde et stats)
 
 selection: """)
@@ -531,6 +537,28 @@ selection: """)
             last_min_score = 100
             libelles = libelles_init
             libelles_emploi_selectionnes = list()
+            continue
+        
+        elif selection == 'a':
+            while True:
+                print(u"Saisir un libellé NETNEH à la main sur lequel matcher les libemplois:")
+                libelle_saisi = raw_input("""
+        SAISIR UN LIBELLE SUR LEQUEL MATCHER, revenir à l'etape precedente (q)
+        selection: """)
+                if libelle_saisi == "q":
+                    break
+                else:
+                    print("Libellé saisi: {}".format(libelle_saisi))
+                    selection = raw_input("""
+        LE LIBELLE EST-IL CORRECT ? OUI (o), NON ET RECOMMENCER LA SAISIE (r)
+        selection: """)
+                    if selection not in ["o", "r"]:
+                        print('Plage de valeurs incorrecte (choisir o ou r)')
+                    elif selection == "r":
+                        continue
+                    elif selection == "o":
+                        grade_matched_on = libelle_saisi
+                        break
             continue
 
         elif selection == 'q':
