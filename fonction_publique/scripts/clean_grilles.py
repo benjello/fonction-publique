@@ -130,11 +130,11 @@ def read_focus():
     for date_variable in ['date_debut_grade', 'date_fin_grade']:
         focus[date_variable] = pd.to_datetime(
             focus[date_variable],
-            dayfirst = True,
+            # dayfirst = True,
             infer_datetime_format = True,
             errors = 'coerce'
             )
-
+    print focus.dtypes
     # Strip zeros from some variable in focus
     focus['echelle'] = focus['echelle'].str.lstrip('0')
     focus['echelle'].replace({'nan': np.nan}, inplace = True)
@@ -289,7 +289,8 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
 
 
 def main():
-    # read_focus()
+    focus = read_focus()
+    print focus.query("libelle_NETNEH == 'Aide soignant de classe normale'")
     build_clean_grille_for_matching(force_rebuild = True)
     # check_grilles()
 

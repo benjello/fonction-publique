@@ -4,6 +4,7 @@
 
 from __future__ import division
 
+from datetime import datetime
 import logging
 import os
 import pprint
@@ -31,7 +32,7 @@ corps_correspondance_data_frame_path = parser.get('correspondances', 'corps_h5')
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
 
 
-def get_correspondance_data_frame(which = None):
+def get_correspondance_data_frame(which = None, netneh = False):
     """
     Charge la table avec les libellés déjà classés.
 
@@ -54,10 +55,15 @@ def get_correspondance_data_frame(which = None):
     if correspondance_non_available:
         log.info("Il n'existe pas de fichier de correspondances pour le {} à compléter".format(which))
         if which == 'grade':
-            data_frame = pd.DataFrame(columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle'])
+            if netneh:
+                data_frame = pd.DataFrame(
+                    columns = ['versant', 'grade', 'date_debut_grade', 'date_fin_grade', 'libelle'])
+            else:
+                data_frame = pd.DataFrame(columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle'])
+                data_frame.annee = data_frame.annee.astype(int)
         if which == 'corps':
             data_frame = pd.DataFrame(columns = ['versant', 'corps', 'libelle'])  # TODO: Add annee
-        data_frame.annee = data_frame.annee.astype(int)
+            data_frame.annee = data_frame.annee.astype(int)
         return data_frame
     else:
         log.info("La table de correspondance {} est utilisé comme point de départ".format(
@@ -180,7 +186,6 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
 
     empty = True
     extracted_results = process.extractBests(slugified_query, choices, limit = 50)
-
     while ((min_score > last_min_score) | empty):
         score_cutoff = score_cutoff - 5
         if score_cutoff < 0:
@@ -230,7 +235,6 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
     unique_grilles = grilles.groupby(['libelle_grade_NEG', 'code_grade_NEG']).count()
     unique_grilles = unique_grilles.reset_index()
     libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
-
 
     while True:
         grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
@@ -362,7 +366,185 @@ def select_corps(libelle_saisi = None, annee = None, versant = None):
     return corps
 
 
-def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None, versant = None,
+def select_libelles_emploi(grade_triplet = None, grade_quadruplet = None, **kwargs):
+    assert (grade_triplet is not None) ^ (grade_quadruplet is not None)  # ^ = xor
+    if grade_triplet:
+        return select_libelles_emploi_from_grade_triplet(grade_triplet = grade_triplet, **kwargs)
+    if grade_quadruplet:
+        return select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = grade_quadruplet, **kwargs)
+
+
+def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemplois = None,
+        show_annee_range = False, show_count = False, remove_not_chosen = True):
+    '''
+    Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
+    choisi par la fonction select_grade_neg.
+
+    Arguments
+    ---------
+    grade_quadruplet : tuple (versant, date_debut_grade, date_fin_grade, libelle_NETNEH),
+        grade de la nomenclature choisi à l'étape précédente
+    libemplois : Series, with index = (annee, versant, frequence du libellé emploi slugifié
+
+    Returns
+    -------
+    libelles_emploi_selectionnes : liste des libellés additionnels pouvant être rattachés au triplet précédent
+    next_libelle : bool, passage au libelle suivant
+    '''
+    assert grade_quadruplet is not None  # (versant, grade, date_debut_grade, date_fin_grade,)
+    assert libemplois is not None
+    libelles_emploi_selectionnes = list()
+    libelles_emploi_non_selectionnes = list()
+    versant, grade, date_debut_grade, date_fin_grade = grade_quadruplet
+    annee_debut_grade = datetime.strptime(date_debut_grade, '%Y-%m-%d').year
+    annee_fin_grade = datetime.strptime(date_fin_grade, '%Y-%m-%d').year
+
+    # When slicing a pandas index, both the start bound AND the stop bound are included
+    libemplois.name = 'frequence'
+    libelles = libemplois.loc[
+        annee_debut_grade:annee_fin_grade, versant].reset_index()['libemploi_slugified'].tolist()
+    libelles_init = libemplois.loc[
+        annee_debut_grade:annee_fin_grade, versant].reset_index()['libemploi_slugified'].tolist()
+
+    libelles_emploi_deja_renseignes_dataframe = get_correspondance_data_frame(which = 'grade', netneh = True)
+    libelles_emploi_deja_renseignes = (libelles_emploi_deja_renseignes_dataframe
+        .query("(date_fin_grade == @date_fin_grade) & (date_debut_grade == @date_debut_grade) &  (versant == @versant)")
+        ).libelle.tolist()
+    #
+    libelles_purges = list(
+        set(libelles_init).difference(libelles_emploi_deja_renseignes)
+        )
+    #
+    assert set(libelles_purges) <= set(libelles), "Libellés purgés invalides {}".format(
+        set(libelles_purges).difference(set(libelles))
+        )
+
+    libelles = libelles_purges
+    next_libelle = False
+    last_min_score = 100
+
+    while True:
+        if libelles_emploi_selectionnes:
+            print("libellés emploi sélectionnés:")
+            pprint.pprint(libelles_emploi_selectionnes)
+            libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_selectionnes]
+
+        if libelles_emploi_non_selectionnes and remove_not_chosen:
+            libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]
+
+        libelles_emploi_additionnels = query_libelles_emploi(
+            query = grade,
+            choices = libelles,
+            last_min_score = last_min_score,
+            )
+
+        libelles_emploi_additionnels = (libelles_emploi_additionnels
+            .merge(
+                libemplois
+                    .reset_index()
+                    .query('versant == @versant')
+                    .drop(['versant'], axis = 1)
+                    .rename(columns = dict(libemploi_slugified = 'libelle_emploi')),
+                how = 'inner',
+                )
+            .groupby(['libelle_emploi', 'score']).agg(
+                dict(
+                    annee = ['min', 'max'],
+                    frequence = ['sum'],
+                    )
+                )
+            .reset_index()
+            .sort_values(['score', ('frequence', 'sum')], ascending = False)
+            .reset_index()
+            )
+
+        printed_columns = ['libelle_emploi', 'score']
+
+        show_count = True
+        show_annee_range = True
+        if show_count:
+            printed_columns.append('frequence')
+        if show_annee_range:
+            printed_columns.append('annee')
+
+        print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels[printed_columns]))
+        selection = raw_input("""
+liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection),
+q (quitter/libelle suivant), s (sauvegarde et stats)
+
+selection: """)
+
+        if any((c in [str(i) for i in range(0, 10)]) for c in selection):
+            if any((c not in [str(i) for i in '0123456789,:']) for c in selection):
+                print('Plage de valeurs incorrecte.')
+                continue
+            problem = False
+            for s in selection.split(","):
+                if ":" in s:
+                    if s.split(":")[0] == "" or s.split(":")[1] == "":
+                        problem = True
+                        break
+                    start = int(s.split(":")[0])
+                    stop = int(s.split(":")[1])
+                else:
+                    start = stop = int(s)
+
+                if not (
+                    libelles_emploi_additionnels.index[0] <=
+                    start <=
+                    stop <=
+                    libelles_emploi_additionnels.index[-1:]
+                        ):
+                    problem = True
+                    break
+
+            if problem:
+                print('Plage de valeurs incorrecte.')
+                continue
+
+            for s in selection.split(","):
+                if ":" in s:
+                    start = int(s.split(":")[0])
+                    stop = int(s.split(":")[1])
+                else:
+                    start = stop = int(s)
+                libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
+                    start:stop, 'libelle_emploi'].tolist()
+            diff = set(libelles_emploi_additionnels.libelle_emploi.tolist()) - set(libelles_emploi_selectionnes)
+            libelles_emploi_non_selectionnes += list(diff)
+            continue
+
+        elif selection == 'o':
+            libelles_emploi_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
+            continue
+
+        elif selection == 'n':
+            libelles_emploi_non_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
+            last_min_score = libelles_emploi_additionnels.score.min()
+            log.debug('last_min_score = {}'.format(last_min_score))
+            continue
+
+        elif selection == 's':
+            break
+
+        elif selection == 'r':
+            last_min_score = 100
+            libelles = libelles_init
+            libelles_emploi_selectionnes = list()
+            continue
+
+        elif selection == 'q':
+            next_libelle = True
+            break
+
+        else:
+            print('Non valide')
+            continue
+
+    return libelles_emploi_selectionnes, next_libelle
+
+
+def select_libelles_emploi_from_grade_triplet(grade_triplet = None, libemplois = None, annee = None, versant = None,
         show_annee_range = False, show_count = False, remove_not_chosen = True):
     '''
     Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
@@ -521,8 +703,8 @@ selection: """)
     return libelles_emploi_selectionnes, next_libelle
 
 
-def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
-        new_table_name = None, print_summary = True):
+def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, grade_quadruplet = None,
+        libemplois = None, new_table_name = None, print_summary = True):
     '''
     Enregistre des libellés attribués à un triplet (grade, versant, date d'effet)
     dans la table de correspondance.
@@ -532,36 +714,53 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
     libelles_emploi : list, liste des libellés classés à enregistrer
     annee : année
     grade_triplet : tuple, (versant, grade, date) assigné aux libellés à enregistrer
+    grade_quadruplet : tuple (versant, date_debut_grade, date_fin_grade, libelle_NETNEH) assigné aux libellés
+        à enregistrer
     libemplois: list, libellés  (pour le count de la proportion de libellés classés)
     '''
     assert libelles_emploi, 'libelles_emploi is None or empty'
     assert isinstance(libelles_emploi, list)
-    assert grade_triplet is not None and annee is not None
+
+    assert (grade_triplet is not None) ^ (grade_quadruplet is not None)  # ^ = xor
     assert libemplois is not None or not print_summary
 
-    versant, grade, date_effet = grade_triplet
+    if grade_triplet:
+        assert grade_triplet is not None and annee is not None
+        versant, grade, date_effet = grade_triplet
+        correspondance_data_frame = get_correspondance_data_frame(which = 'grade')
+        for libelle in libelles_emploi:
+            correspondance_data_frame = correspondance_data_frame.append(pd.DataFrame(
+                data = [[versant, grade, date_effet, annee, libelle]],
+                columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
+                ))
 
-    correspondance_data_frame = get_correspondance_data_frame(which = 'grade')
-    for libelle in libelles_emploi:
-        correspondance_data_frame = correspondance_data_frame.append(pd.DataFrame(
-            data = [[versant, grade, date_effet, annee, libelle]],
-            columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
-            ))
-
-    if DEBUG:
-        print("Libellés renseignés")
-        pprint.pprint(correspondance_data_frame.set_index(
-            ['versant', 'grade', 'date_effet', 'annee']
-            ))
-
-    print("Libellés renseignés pour le grade {}:".format(grade))
-    if not correspondance_data_frame.empty:
-        pprint.pprint(
-            correspondance_data_frame.set_index(
-                ['versant', 'grade', 'date_effet', 'annee']
+        print("Libellés renseignés pour le grade {}:".format(grade))
+        if not correspondance_data_frame.empty:
+            pprint.pprint(
+                correspondance_data_frame.set_index(
+                    ['versant', 'grade', 'date_effet', 'annee']
+                    )
+                .loc[versant, grade, date_effet, annee]
                 )
-            .loc[versant, grade, date_effet, annee]
-            )
+
+    if grade_quadruplet:
+        netneh = True
+        versant, grade, date_debut_grade, date_fin_grade = grade_quadruplet
+        correspondance_data_frame = get_correspondance_data_frame(which = 'grade', netneh = True)
+        for libelle in libelles_emploi:
+            correspondance_data_frame = correspondance_data_frame.append(pd.DataFrame(
+                data = [[versant, grade, date_debut_grade, date_fin_grade, libelle]],
+                columns = ['versant', 'grade', 'date_debut_grade', 'date_fin_grade', 'libelle']
+                ))
+
+        print("Libellés renseignés pour le grade {}:".format(grade))
+        if not correspondance_data_frame.empty:
+            pprint.pprint(correspondance_data_frame
+                .set_index(['versant', 'grade', 'date_debut_grade', 'date_fin_grade'])
+                .loc[(versant, grade, date_debut_grade, date_fin_grade), 'libelle']
+                .sort_values()
+                )
+
     log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
     correspondance_data_frame.to_hdf(
         correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True
@@ -571,36 +770,65 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         print_stats(
             libemplois = libemplois,
             annee = annee,
-            versant = versant
+            versant = versant,
+            netneh = True
             )
 
 
-def print_stats(libemplois = None, annee = None, versant = None):
-    correspondance_data_frame = get_correspondance_data_frame(which = 'grade')[
-        ['versant', 'annee', 'date_effet', 'libelle']
-        ].rename(
-            columns = dict(annee = 'annee_stop', libelle = 'libemploi_slugified')
-            ).copy()
-    correspondance_data_frame['annee_start'] = pd.to_datetime(
-        correspondance_data_frame.date_effet
-        ).dt.year
-    del correspondance_data_frame['date_effet']
+def print_stats(libemplois = None, annee = None, versant = None, netneh = False):
     libemplois.name = 'count'
-    merged_libemplois = (libemplois
-        .reset_index()
-        .query("libemploi_slugified != ''")  # On ne garde pas les libellés vides
-        .merge(correspondance_data_frame)
-        )
+    if netneh:
+        correspondance_data_frame = get_correspondance_data_frame(which = 'grade', netneh = True)[
+            ['versant', 'grade', 'date_debut_grade', 'date_fin_grade', 'libelle']
+            ].rename(
+                columns = dict(libelle = 'libemploi_slugified')
+                ).copy()
 
-    if annee:
-        libelles_emploi_deja_renseignes = (merged_libemplois
-            .query('annee_start <= annee <= annee_stop')
-            .drop(['annee_start', 'annee_stop'], axis = 1)
+        merged_libemplois = (libemplois
+            .reset_index()
+            .query("libemploi_slugified != ''")  # On ne garde pas les libellés vides
+            .merge(
+                correspondance_data_frame,
+                on = ['versant', 'libemploi_slugified'],
+                )
             )
-    else:
-        libelles_emploi_deja_renseignes = merged_libemplois
+        merged_libemplois['annee_debut_grade'] = pd.to_datetime(merged_libemplois.date_debut_grade).dt.year
+        merged_libemplois['annee_fin_grade'] = pd.to_datetime(merged_libemplois.date_fin_grade).dt.year
 
-    libelles_emploi_deja_renseignes = libelles_emploi_deja_renseignes.drop_duplicates()
+        libelles_emploi_deja_renseignes = (merged_libemplois
+            .query('annee_debut_grade <= annee <= annee_fin_grade')
+            .drop(['annee_debut_grade', 'annee_fin_grade'], axis = 1)
+            .drop_duplicates()
+            )
+
+    else:
+        correspondance_data_frame = get_correspondance_data_frame(which = 'grade')[
+            ['versant', 'annee', 'date_effet', 'libelle']
+            ].rename(
+                columns = dict(annee = 'annee_stop', libelle = 'libemploi_slugified')
+                ).copy()
+        correspondance_data_frame['annee_start'] = pd.to_datetime(
+            correspondance_data_frame.date_effet
+            ).dt.year
+        del correspondance_data_frame['date_effet']
+
+        merged_libemplois = (libemplois
+            .reset_index()
+            .query("libemploi_slugified != ''")  # On ne garde pas les libellés vides
+            .merge(
+                correspondance_data_frame,
+                )
+            )
+
+        if annee:
+            libelles_emploi_deja_renseignes = (merged_libemplois
+                .query('annee_start <= annee <= annee_stop')
+                .drop(['annee_start', 'annee_stop'], axis = 1)
+                )
+        else:
+            libelles_emploi_deja_renseignes = merged_libemplois
+
+        libelles_emploi_deja_renseignes = libelles_emploi_deja_renseignes.drop_duplicates()
 
     selectionnes = libelles_emploi_deja_renseignes.groupby(['annee', 'versant']).agg({
         'count': 'sum',
@@ -759,7 +987,7 @@ def select_libelle_from_grade_neg(grade_triplet = None, annee = None, versant = 
             return 'next_libelle'
 
 
-def validate_correspondance(correspondance_data_frame, check_only = False):
+def validate_correspondance(correspondance_data_frame, check_only = False, netneh = False):
     valid_data_frame = True
     if correspondance_data_frame.duplicated().any():
         print("The are {} duplicated lines".format(correspondance_data_frame.duplicated().sum()))
@@ -771,32 +999,41 @@ def validate_correspondance(correspondance_data_frame, check_only = False):
     else:
         correspondance_data_frame_cleaned = correspondance_data_frame
 
-    counts = correspondance_data_frame_cleaned.groupby(['versant', 'annee', 'libelle']).count()
-    if counts.max().values.tolist() != [1, 1]:
-        if check_only:
-            return False
-        valid_data_frame = False
-        erroneous_entry = counts.query('grade > 1 or date_effet > 1').index.tolist()
-        correct_entry = counts.query('grade == 1 and date_effet == 1').index.tolist()
-        # print(correspondance_data_frame_cleaned.set_index(['versant', 'annee', 'libelle']).ix[erroneous_entry])
-        correspondance_data_frame_cleaned = (correspondance_data_frame_cleaned
-            .set_index(['versant', 'annee', 'libelle'])
-            .ix[correct_entry]
-            .reset_index()
-            )
-        for libelle in erroneous_entry:
-            log.info("CLEANING duplicated neg")
-            grade_triplet = select_grade_neg(
-                versant = libelle[0], annee = libelle[1], libelle_saisi = libelle[2]
+    if netneh:
+        print 'NETNEH'
+        counts = correspondance_data_frame_cleaned.groupby(
+            ['versant', 'grade', 'date_debut_grade', 'date_fin_grade', 'libelle',]
+            ).count()
+        print counts
+        log.info('TODO: Complete validaion')  # TODO FIXME
+        return True  # REMOVE ME
+    else:
+        counts = correspondance_data_frame_cleaned.groupby(['versant', 'annee', 'libelle']).count()
+        if counts.max().values.tolist() != [1, 1]:
+            if check_only:
+                return False
+            valid_data_frame = False
+            erroneous_entry = counts.query('grade > 1 or date_effet > 1').index.tolist()
+            correct_entry = counts.query('grade == 1 and date_effet == 1').index.tolist()
+            correspondance_data_frame_cleaned = (correspondance_data_frame_cleaned
+                .set_index(['versant', 'annee', 'libelle'])
+                .ix[correct_entry]
+                .reset_index()
                 )
-            if grade_triplet == "quit":
-                print("Le libelle {} n'est pas reclassé".format(libelle[2]))
-                continue
-            else:
-                correspondance_data_frame_cleaned = correspondance_data_frame_cleaned.append(pd.DataFrame(
-                    data = [[grade_triplet[0], grade_triplet[1], grade_triplet[2], libelle[1], libelle[2]]],
-                    columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
-                    ))
+            for libelle in erroneous_entry:
+                log.info("CLEANING duplicated neg")
+                grade_triplet = select_grade_neg(
+                    versant = libelle[0], annee = libelle[1], libelle_saisi = libelle[2]
+                    )
+                if grade_triplet == "quit":
+                    print("Le libelle {} n'est pas reclassé".format(libelle[2]))
+                    continue
+                else:
+                    correspondance_data_frame_cleaned = correspondance_data_frame_cleaned.append(pd.DataFrame(
+                        data = [[grade_triplet[0], grade_triplet[1], grade_triplet[2], libelle[1], libelle[2]]],
+                        columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
+                        ))
+
     if check_only:
         return True
     return valid_data_frame, correspondance_data_frame_cleaned
@@ -835,13 +1072,17 @@ selection: """)
             return versant, annee, libelle_emploi, ignored_libelles
 
 
-def validate_and_save(correspondance_data_frame_path):
-    # Validate correspondance table before exiting
+def validate_and_save(correspondance_data_frame_path, netneh = False):
+    """
+    Validate correspondance table before exiting
+    """
     correspondance_data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
     valid_data_frame = False
     while not valid_data_frame:
         log.info('Validating correspondance data frame')
-        valid_data_frame, correspondance_data_frame = validate_correspondance(correspondance_data_frame)
+        valid_data_frame, correspondance_data_frame = validate_correspondance(
+            correspondance_data_frame, netneh = netneh)
+
     log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
     correspondance_data_frame.to_hdf(
         correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True

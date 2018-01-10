@@ -20,6 +20,8 @@ from fonction_publique.matching_grade.grade_matching import (
     get_grilles_cleaned,
     libelles_emploi_directory,
     print_stats,
+    select_libelles_emploi,
+    store_libelles_emploi,
     validate_and_save,
     VERSANTS,
     )
@@ -64,7 +66,7 @@ selection: """)
                 while True:
                     grades = query_grade_netneh(
                         query = libelle_saisi, choices = libelles_NETNEH, score_cutoff = score_cutoff)
-                    print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
+                    print("\nGrade NETNEH possibles pour {} (score_cutoff = {}):\n{}".format(
                         libelle_saisi, score_cutoff, grades))
                     selection2 = raw_input("""
     NOMBRE, plus de choix (n),  quitter (q)
@@ -80,7 +82,7 @@ selection: """)
                         break
                 break
 
-    # TODO: ne pas prendre le min mais toutes les grilles possibles avec ce neg.
+    # TODO: ne pas prendre le min mais toutes les grilles possibles avec ce garde NETNEH.
     grilles = grilles.loc[
         grilles.libelle_NETNEH == grade,
         ['date_debut_grade', 'date_fin_grade', 'libelle_NETNEH', 'libelle_grade_NEG', 'code_grade_NEG', 'libelle_FP']
@@ -91,8 +93,9 @@ selection: """)
             print(grilles)
             date_debut_grade = grilles.date_debut_grade.dt.strftime('%Y-%m-%d').unique()[0]
             date_fin_grade = grilles.date_fin_grade.dt.strftime('%Y-%m-%d').unique()[0]
-            print date_debut_grade
-            print(u"\nIl n'y a qu'un seul grade qui correspond. Ce grade convient-il ? ")
+            print(u"\nUn seul grade {} est identifié: il débute le {} et finit le {}.\nCe grade convient-il ? ".format(
+                grade, date_debut_grade, date_fin_grade
+                ))
             libelle_saisi = raw_input("""
 VALIDER ?, oui (o), quitter (q)
 selection: """)
@@ -104,17 +107,23 @@ selection: """)
                 continue
     else:
         while True:
-            print("\nGrade  possibles:\n{}".format(
-                grilles))
+            print("\nGrades possibles:\n{}".format(
+                grilles[['date_debut_grade', 'date_fin_grade', 'libelle_NETNEH', 'code_grade_NEG']]))
             selection2 = raw_input("""
 NOMBRE, quitter (q)
 selection: """)
             if selection2 == "q":
                 return "quit"
             elif selection2.isdigit() and int(selection2) in grilles.index:
-                        grade = grilles.loc[int(selection2), "libelle_NETNEH"]
-                        print("Le grade NETNEH {} a été choisi".format(grade))
-                        break
+                    grade = grilles.loc[int(selection2), "libelle_NETNEH"]
+                    date_debut_grade = grilles.loc[int(selection2), "date_debut_grade"].strftime('%Y-%m-%d')
+                    try:
+                        date_fin_grade = grilles.loc[int(selection2), "date_fin_grade"].strftime('%Y-%m-%d')
+                    except ValueError:
+                        date_fin_grade = '2100-01-01'
+                    print("Le grade NETNEH {} débutant le {} et finissant le {} a été choisi ".format(
+                        grade, date_debut_grade, date_fin_grade))
+                    break
             else:
                 continue
 
@@ -132,7 +141,7 @@ selection: """)
  - date de debut du grade: {}
  - date de fin du grade: {}""".format(
         versant,
-        grade,
+        grade,  # (libelle du) grade NETNEH
         date_debut_grade,
         date_fin_grade,
         ))
@@ -166,12 +175,11 @@ def query_grade_netneh(query = None, choices = None, score_cutoff = 95):
         return query_grade_netneh(query, choices = choices, score_cutoff = score_cutoff - 5)
 
 
-def select_libelle_from_grade_netneh(grade_quadruplet = None, versant = None, libemplois = None):
+def select_libelle_from_grade_netneh(grade_quadruplet = None, libemplois = None):
     while True:
         libelles_emploi_selectionnes, next_libelle = select_libelles_emploi(
             grade_quadruplet = grade_quadruplet,
             libemplois = libemplois,
-            versant = versant,
             )
 
         if libelles_emploi_selectionnes:
@@ -184,11 +192,13 @@ def select_libelle_from_grade_netneh(grade_quadruplet = None, versant = None, li
             return 'next_libelle'
 
 
-
 def main():
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
+
     change_versant = True
+    # change_versant = False  # REMOVEME
+    # versant = 'H'  # REMOVEME
 
     while True:
         if change_versant:
@@ -215,7 +225,7 @@ def main():
             'libelle_NETNEH',
             ]
         grilles = get_grilles_cleaned(versant = versant, force_rebuild = False, subset = subset)
-        print_stats(libemplois = libemplois, versant = versant)
+        print_stats(libemplois = libemplois, versant = versant, netneh = True)
         libelle_FP = 'FONCTION PUBLIQUE HOSPITALIERE' if versant == 'H' else 'FONCTION PUBLIQUE TERRITORIALE'  # noqa
         libelles_NETNEH = grilles.query('libelle_FP == @libelle_FP')['libelle_NETNEH'].unique()
         grade_quadruplet = select_grade_netneh_by_hand(
@@ -223,36 +233,32 @@ def main():
             libelles_NETNEH = libelles_NETNEH,
             grilles = grilles
             )
+        # grade_quadruplet = ('H', 'Aide soignant de classe normale', '1988-12-01', '2007-06-24')
 
         if grade_quadruplet == 'quit':
-            validate_and_save(correspondance_data_frame_path)
+            log.info('Quit and save')
+            validate_and_save(correspondance_data_frame_path, netneh = True)
             return 'quit'
-
-#        print("Classer les libellés dans la grille {} ?".format(grade_triplet))
-#            new_versant = raw_input("""
-#         o: oui, n: non
-#        selection: """)
 
         what_next = select_libelle_from_grade_netneh(
             grade_quadruplet = grade_quadruplet,
-            versant = versant,
             libemplois = libemplois,
             )
 
         if what_next == 'next_libelle':
             print("Changement de grade. Changer le versant({}) ?".format(versant))
             new_versant = raw_input("""
-         o: oui, n: non
+         o: oui, n: non,
         selection: """)
             if new_versant == "n":
                 change_versant = False
             continue
 
         if what_next == 'quit':
-            validate_and_save(correspondance_data_frame_path)
+            validate_and_save(correspondance_data_frame_path, netneh = True)
             return
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
+    logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
     main()
