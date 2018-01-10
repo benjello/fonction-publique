@@ -14,12 +14,11 @@ from fonction_publique.base import get_careers, parser, timing
 from fonction_publique.merge_careers_and_legislation import get_grilles
 
 
-
 @timing
 def merge_libelles_emploi_data(debug = True, decennie):
 
     libemploi_h5 = os.path.join(libelles_emploi_tmp_directory, 'libemploi_{}.h5')
-    list_decennie = [1950,1970]
+    list_decennie = [1950, 1970]
     for decennie in list_decennie:
         libemploi = get_careers(variable = 'libemploi', decennie = decennie, debug = debug)
         statut = get_careers(variable = 'statut', decennie = decennie, debug = debug)

@@ -1000,13 +1000,11 @@ def validate_correspondance(correspondance_data_frame, check_only = False, netne
         correspondance_data_frame_cleaned = correspondance_data_frame
 
     if netneh:
-        print 'NETNEH'
         counts = correspondance_data_frame_cleaned.groupby(
             ['versant', 'grade', 'date_debut_grade', 'date_fin_grade', 'libelle',]
             ).count()
-        print counts
         log.info('TODO: Complete validaion')  # TODO FIXME
-        return True  # REMOVE ME
+
     else:
         counts = correspondance_data_frame_cleaned.groupby(['versant', 'annee', 'libelle']).count()
         if counts.max().values.tolist() != [1, 1]:
