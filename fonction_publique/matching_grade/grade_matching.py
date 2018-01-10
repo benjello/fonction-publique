@@ -419,12 +419,11 @@ def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemp
         set(libelles_purges).difference(set(libelles))
         )
 
-
     libelles = libelles_purges
     next_libelle = False
     last_min_score = 100
-    grade_matched_on = grade
-    
+    grade_query = grade
+
     while True:
         if libelles_emploi_selectionnes:
             print("libellés emploi sélectionnés:")
@@ -434,9 +433,8 @@ def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemp
         if libelles_emploi_non_selectionnes and remove_not_chosen:
             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]
 
-
         libelles_emploi_additionnels = query_libelles_emploi(
-            query = grade_matched_on,
+            query = grade_query,
             choices = libelles,
             last_min_score = last_min_score,
             )
@@ -471,7 +469,7 @@ def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemp
             printed_columns.append('annee')
 
         print("\nAutres libellés emploi possibles pour le grade {} (libelle utilise dans le matching: {}):\n{}".format(
-                grade, grade_matched_on,
+                grade, grade_query,
                 libelles_emploi_additionnels[printed_columns]
                 ))
         selection = raw_input("""
@@ -538,7 +536,7 @@ selection: """)
             libelles = libelles_init
             libelles_emploi_selectionnes = list()
             continue
-        
+
         elif selection == 'a':
             while True:
                 print(u"Saisir un libellé NETNEH à la main sur lequel matcher les libemplois:")
@@ -557,7 +555,7 @@ selection: """)
                     elif selection == "r":
                         continue
                     elif selection == "o":
-                        grade_matched_on = libelle_saisi
+                        grade_query = libelle_saisi
                         break
             continue
 

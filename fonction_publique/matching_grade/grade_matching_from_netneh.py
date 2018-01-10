@@ -93,7 +93,11 @@ selection: """)
         while True:
             print(grilles)
             date_debut_grade = grilles.date_debut_grade.dt.strftime('%Y-%m-%d').unique()[0]
-            date_fin_grade = grilles.date_fin_grade.dt.strftime('%Y-%m-%d').unique()[0]
+            try:
+                date_fin_grade = grilles.date_fin_grade.dt.strftime('%Y-%m-%d').unique()[0]
+            except ValueError:
+                date_fin_grade = '2100-01-01'
+
             print(u"\nUn seul grade {} est identifié: il débute le {} et finit le {}.\nCe grade convient-il ? ".format(
                 grade, date_debut_grade, date_fin_grade
                 ))
