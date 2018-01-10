@@ -64,8 +64,9 @@ selection: """)
                 continue
             elif selection == "o":
                 while True:
+                    slugified_libelle_saisi = slugify(libelle_saisi, separator = '_')
                     grades = query_grade_netneh(
-                        query = libelle_saisi, choices = libelles_NETNEH, score_cutoff = score_cutoff)
+                        query = slugified_libelle_saisi , choices = libelles_NETNEH, score_cutoff = score_cutoff)
                     print("\nGrade NETNEH possibles pour {} (score_cutoff = {}):\n{}".format(
                         libelle_saisi, score_cutoff, grades))
                     selection2 = raw_input("""
@@ -233,7 +234,7 @@ def main():
             libelles_NETNEH = libelles_NETNEH,
             grilles = grilles
             )
-        # grade_quadruplet = ('H', 'Aide soignant de classe normale', '1988-12-01', '2007-06-24')
+        # grade_quadruplet = ('H', 'Aide soignant de classe normale', '1988-12-01', '2007-06-24')
 
         if grade_quadruplet == 'quit':
             log.info('Quit and save')
