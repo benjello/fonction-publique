@@ -49,6 +49,7 @@ setup(
         'python-slugify',
         'pyxdg >= 0.25',
         'tables',
+        'xlrd',
         ],
     packages = find_packages(exclude=['fonction_publique.tests*']),
     test_suite = 'nose.collector',
