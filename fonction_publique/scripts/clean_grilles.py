@@ -289,8 +289,6 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
 
 
 def main():
-    focus = read_focus()
-    print focus.query("libelle_NETNEH == 'Aide soignant de classe normale'")
     build_clean_grille_for_matching(force_rebuild = True)
     # check_grilles()
 
