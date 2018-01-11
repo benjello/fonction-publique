@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mkdir ./.config
-mkdir ./.config/fonction-publique
-cp ./config_jovian.ini ./.config/fonction-publique/
-mkdir ./data
+mkdir /home/jovyan/.config
+mkdir /home/jovyan/.config/fonction-publique
+cp /home/jovyan/config_jovian.ini /home/jovyan/.config/fonction-publique/
+mkdir /home/jovyan/data
 /srv/venv2/bin/clean_grilles
