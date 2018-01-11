@@ -1,3 +1,5 @@
+#!/bin/bash
+
 mkdir /home/jovian/.config
 mkdir .config/fonction-publique
 cp config_jovian.ini .config/fonction-publique/
