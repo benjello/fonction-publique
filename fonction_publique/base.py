@@ -64,9 +64,12 @@ table_correspondance_corps_path = os.path.join(
     'corresp_neg_netneh.csv'
     )
 
-grilles = pd.read_hdf(
-    os.path.join(grilles_hdf_path),
-    )
+try:
+    grilles = pd.read_hdf(
+        os.path.join(grilles_hdf_path),
+        )
+except IOError:
+    grilles = None
 
 # Directories paths:
 raw_directory_path = parser.get('data', 'raw')
