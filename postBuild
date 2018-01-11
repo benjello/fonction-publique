@@ -4,3 +4,4 @@ mkdir /home/jovyan/.config
 mkdir /home/jovyan/.config/fonction-publique
 cp /home/jovyan/config_jovian.ini /home/jovyan/.config/fonction-publique/config.ini
 mkdir /home/jovyan/data
+/srv/venv2/bin/clean_grilles
