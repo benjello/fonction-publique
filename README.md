@@ -4,7 +4,7 @@ Modelling French public servants' careers.
 
 ## Test on binder
 
-[![Binder](http://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/benjello/fonction-publique/clean_grilles?urlpath=lab)
+[![Binder](http://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/benjello/fonction-publique/master?urlpath=lab)
 
 ## Install
 
