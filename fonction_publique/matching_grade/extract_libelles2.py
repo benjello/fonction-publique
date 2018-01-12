@@ -19,8 +19,6 @@ from slugify import slugify
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
 
 
-
-
 def load_libelles(data_path = None, debug = False):
     libemploi = get_careers(variable = 'libemploi', data_path = data_path, debug = debug)
     libemploi['libemploi_slugified'] = libemploi.libemploi.apply(slugify, separator = "_")
@@ -39,23 +37,21 @@ def load_libelles(data_path = None, debug = False):
 def save_subset_libelle(load_path = None, save_path = None):
     load_libelle_file = os.path.join(load_path, "libemploi.h5")
     load_slugified_file = os.path.join(load_path, "correspondance_libemploi_slug.h5")
-    
+
     libelles_file = pd.read_hdf(load_libelle_file)
-    slugified_file = pd.read_hdf(load_slugified_file) 
-    
-    sub_libemplois =  libelles_file.sample(frac=0.05)
-    
+    slugified_file = pd.read_hdf(load_slugified_file)
+
+    sub_libemplois = libelles_file.sample(frac=0.05)
+
     list_sub_libelles = sub_libemplois.index.get_level_values('libemploi_slugified').tolist()
     sub_correspondance = slugified_file.loc[(slugified_file.libemploi_slugified.isin(list_sub_libelles))]
-    
+
     save_libelle_file = os.path.join(save_path, "libemploi.h5")
     save_slugified_file = os.path.join(save_path, "correspondance_libemploi_slug.h5")
 
-    
-    sub_libemplois.to_hdf(save_libelle_file, 'libemploi')
-    sub_correspondance.to_hdf(save_slugified_file, 'correspondance_libemploi_slug')
-    
-    
+    sub_libemplois.sort_index().to_hdf(save_libelle_file, 'libemploi')
+    sub_correspondance.sort_index().to_hdf(save_slugified_file, 'correspondance_libemploi_slug')
+
 
 def main(clean_data = False, debug = False, ):
     # Etape 1: data_cleaning
