@@ -375,7 +375,7 @@ def select_libelles_emploi(grade_triplet = None, grade_quadruplet = None, **kwar
 
 
 def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemplois = None,
-        show_annee_range = False, show_count = False, remove_not_chosen = True):
+        show_annee_range = False, show_count = True, remove_not_chosen = True):
     '''
     Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
     choisi par la fonction select_grade_neg.
@@ -461,8 +461,6 @@ def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemp
 
         printed_columns = ['libelle_emploi', 'score']
 
-        show_count = True
-        show_annee_range = True
         if show_count:
             printed_columns.append('frequence')
         if show_annee_range:
