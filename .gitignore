@@ -18,8 +18,8 @@ config.ini
 *.toc
 
 
-!fonction_publique/data/libemploi.h5
-!fonction_publique/data/correspondance_libemploi_slug.h5
+!data/libemploi.h5
+!data/correspondance_libemploi_slug.h5
 
 
 .pydevproject
