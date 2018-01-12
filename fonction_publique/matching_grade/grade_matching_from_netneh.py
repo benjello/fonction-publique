@@ -91,10 +91,10 @@ selection: """)
 
     if len(grilles) == 1:
         while True:
-            print(grilles)
-            date_debut_grade = grilles.date_debut_grade.dt.strftime('%Y-%m-%d').unique()[0]
+            print(grilles[['date_debut_grade', 'date_fin_grade', 'libelle_NETNEH', 'code_grade_NEG']])
+            date_debut_grade = grilles.loc[0, "date_debut_grade"].strftime('%Y-%m-%d')
             try:
-                date_fin_grade = grilles.date_fin_grade.dt.strftime('%Y-%m-%d').unique()[0]
+                date_fin_grade = grilles.loc[0, "date_fin_grade"].strftime('%Y-%m-%d')
             except ValueError:
                 date_fin_grade = '2100-01-01'
 
@@ -140,7 +140,7 @@ selection: """)
         assert libelle_FP == 'FONCTION PUBLIQUE TERRITORIALE' or 'FONCTION PUBLIQUE TERRITORIALE' in libelle_FP
 
     assert versant in VERSANTS, "versant {} is not in {}".format(versant, VERSANTS)
-    print("""Le grade NEG suivant a été sélectionné:
+    print("""Le grade NETNEH suivant a été sélectionné:
  - versant: {}
  - libellé du grade: {}
  - date de debut du grade: {}
