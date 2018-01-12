@@ -8,9 +8,10 @@ that will be matched in the grade_matching.py script.
 import logging
 import os
 import sys
+import pandas as pd
 
 
-from fonction_publique.base import clean_directory_path, raw_directory_path, get_careers, parser, DEFAULT_CHUNKSIZE
+from fonction_publique.base import clean_directory_path, raw_directory_path, asset_path, get_careers, parser, DEFAULT_CHUNKSIZE
 from fonction_publique import raw_data_cleaner
 from slugify import slugify
 
@@ -18,8 +19,6 @@ from slugify import slugify
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
 
 
-app_name = os.path.splitext(os.path.basename(__file__))[0]
-log = logging.getLogger(app_name)
 
 
 def load_libelles(data_path = None, debug = False):
@@ -37,7 +36,28 @@ def load_libelles(data_path = None, debug = False):
     return libemploi
 
 
-def main(clean_data = False, debug = False):
+def save_subset_libelle(load_path = None, save_path = None):
+    load_libelle_file = os.path.join(load_path, "libemploi.h5")
+    load_slugified_file = os.path.join(load_path, "correspondance_libemploi_slug.h5")
+    
+    libelles_file = pd.read_hdf(load_libelle_file)
+    slugified_file = pd.read_hdf(load_slugified_file) 
+    
+    sub_libemplois =  libelles_file.sample(frac=0.05)
+    
+    list_sub_libelles = sub_libemplois.index.get_level_values('libemploi_slugified').tolist()
+    sub_correspondance = slugified_file.loc[(slugified_file.libemploi_slugified.isin(list_sub_libelles))]
+    
+    save_libelle_file = os.path.join(save_path, "libemploi.h5")
+    save_slugified_file = os.path.join(save_path, "correspondance_libemploi_slug.h5")
+
+    
+    sub_libemplois.to_hdf(save_libelle_file, 'libemploi')
+    sub_correspondance.to_hdf(save_slugified_file, 'correspondance_libemploi_slug')
+    
+    
+
+def main(clean_data = False, debug = False, ):
     # Etape 1: data_cleaning
     if clean_data:
         raw_data_cleaner.main(
