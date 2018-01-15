@@ -768,7 +768,6 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
                 )
 
     if grade_quadruplet:
-        netneh = True
         versant, grade, date_debut_grade, date_fin_grade = grade_quadruplet
         correspondance_data_frame = get_correspondance_data_frame(which = 'grade', netneh = True)
         for libelle in libelles_emploi:
@@ -779,11 +778,17 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
 
         print("Libellés renseignés pour le grade {}:".format(grade))
         if not correspondance_data_frame.empty:
-            pprint.pprint(correspondance_data_frame
-                .set_index(['versant', 'grade', 'date_debut_grade', 'date_fin_grade'])
-                .loc[(versant, grade, date_debut_grade, date_fin_grade), 'libelle']
-                .sort_values()
-                )
+            try:
+                pprint.pprint(correspondance_data_frame
+                    .set_index(['versant', 'grade', 'date_debut_grade', 'date_fin_grade'])
+                    .loc[(versant, grade, date_debut_grade, date_fin_grade), 'libelle']
+                    .sort_values()
+                    )
+            except:
+                pprint.pprint(correspondance_data_frame
+                    .set_index(['versant', 'grade', 'date_debut_grade', 'date_fin_grade'])
+                    .loc[(versant, grade, date_debut_grade, date_fin_grade), 'libelle']
+                    )
 
     log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
     correspondance_data_frame.to_hdf(
