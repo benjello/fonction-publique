@@ -130,11 +130,10 @@ def read_focus():
     for date_variable in ['date_debut_grade', 'date_fin_grade']:
         focus[date_variable] = pd.to_datetime(
             focus[date_variable],
-            # dayfirst = True,
+            # dayfirst = True,
             infer_datetime_format = True,
             errors = 'coerce'
             )
-    print focus.dtypes
     # Strip zeros from some variable in focus
     focus['echelle'] = focus['echelle'].str.lstrip('0')
     focus['echelle'].replace({'nan': np.nan}, inplace = True)
@@ -249,9 +248,17 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
                 'min_mois',
                 'moy_mois',
                 ]],
-            on = ['code_grade_NEG', 'libelle_grade_NEG']
+            on = ['code_grade_NEG', 'libelle_grade_NEG'],
+            how = 'left',
             )
-        grille = prepare_grille(grille)
+        assert set(focus.libelle_grade_NEG.unique()) == set(focus.libelle_grade_NEG.unique()), \
+            "Les libelle_grade_NEG de focus n'ont pas pu être matchés: {}".format(
+                set(focus.libelle_grade_NEG.unique()).difference(set(grille.libelle_grade_NEG.unique()))
+            )
+        assert set(focus.code_grade_NEG.unique()) == set(focus.code_grade_NEG.unique()), \
+            "Les code_grade_NEG de focus n'ont pas pu être matchés: {}".format(
+                set(focus.code_grade_NEG.unique()).difference(set(grille.code_grade_NEG.unique()))
+            )
         correspondace_grade_corps = read_correspondace_grade_corps()
         grille = grille.merge(correspondace_grade_corps, on = 'code_grade_NEG', how = 'left')
         grille[[
@@ -269,7 +276,7 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
             'date_debut_grade',      # datetime64[ns]
             'date_fin_grade',        # datetime64[ns]
             'code_grade_NETNEH',     # object
-            # 'type_grade',            # object VIDE
+            # 'type_grade',            # object VIDE
             'libelle_NETNEH',        # object  To translate from unicode
             'date_effet_grille',     # datetime64[ns]
             'echelon',               # int32

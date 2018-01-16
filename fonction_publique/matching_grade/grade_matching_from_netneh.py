@@ -66,7 +66,7 @@ selection: """)
                 while True:
                     slugified_libelle_saisi = slugify(libelle_saisi, separator = '_')
                     grades = query_grade_netneh(
-                        query = slugified_libelle_saisi , choices = libelles_NETNEH, score_cutoff = score_cutoff)
+                        query = slugified_libelle_saisi, choices = libelles_NETNEH, score_cutoff = score_cutoff)
                     print("\nGrade NETNEH possibles pour {} (score_cutoff = {}):\n{}".format(
                         libelle_saisi, score_cutoff, grades))
                     selection2 = raw_input("""
@@ -172,9 +172,9 @@ def query_grade_netneh(query = None, choices = None, score_cutoff = 95):
     slugified_choices = [slugify(choice, separator = '_') if (choice is not np.nan) else '' for choice in choices]
     results = process.extractBests(query, slugified_choices, score_cutoff = score_cutoff, limit = 50)
     if results:
-        choice_by_slug = dict(zip(slugified_choices, choices))
-        data_frame = pd.DataFrame.from_records(results, columns = ['slug_libelle', 'score'])
-        data_frame['libelle_NETNEH'] = data_frame.slug_libelle.map(choice_by_slug)
+        slug_by_choice = pd.DataFrame({'libelle_NETNEH': choices, 'slug_libelle': slugified_choices})
+        data_frame = pd.DataFrame.from_records(results, columns = ['slug_libelle', 'score']).drop_duplicates()
+        data_frame = data_frame.merge(slug_by_choice, how = 'left', on = ['slug_libelle'])
         return data_frame
     else:
         return query_grade_netneh(query, choices = choices, score_cutoff = score_cutoff - 5)
