@@ -144,7 +144,17 @@ def read_focus():
     for problematic_mixed_string in ['corps', 'filiere', 'libelle_NETNEH']:
         focus[problematic_mixed_string] = focus[problematic_mixed_string].str.normalize('NFKD').str.encode(
             'ascii', errors='ignore').str.decode('utf-8').astype(str)
-    assert not focus[['code_grade_NEG', 'libelle_grade_NEG', 'libelle_NETNEH', 'date_debut_grade']].duplicated().any()
+    assert not focus[[
+        'code_grade_NEG',
+        'libelle_grade_NEG',
+        'libelle_NETNEH',
+        'date_debut_grade']].duplicated().any(), \
+        focus.loc[
+            focus[
+                ['code_grade_NEG', 'libelle_grade_NEG', 'libelle_NETNEH', 'date_debut_grade']
+                ].duplicated(keep = False),
+                ['code_grade_NEG', 'libelle_grade_NEG', 'libelle_NETNEH', 'date_debut_grade', 'code_grade_NETNEH']
+            ]
 
     return focus
 
@@ -259,6 +269,7 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
             "Les code_grade_NEG de focus n'ont pas pu être matchés: {}".format(
                 set(focus.code_grade_NEG.unique()).difference(set(grille.code_grade_NEG.unique()))
             )
+        grille = prepare_grille(grille)
         correspondace_grade_corps = read_correspondace_grade_corps()
         grille = grille.merge(correspondace_grade_corps, on = 'code_grade_NEG', how = 'left')
         grille[[
