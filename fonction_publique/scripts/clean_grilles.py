@@ -214,7 +214,7 @@ def prepare_grille(grille):
         for col in [
                 'categh',
                 'code_grade_NEG',
-                'code_grade_NETNEH',
+                # 'code_grade_NETNEH',
                 'echelle',
                 'libelle_grade_NEG',
                 ]:
@@ -249,7 +249,7 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
         grille = focus.merge(
             exhaustive[[
                 'code_grade_NEG',
-                # 'code_grade_NETNEH',
+                # 'code_grade_NETNEH', Already present in focus
                 'date_effet_grille',
                 'echelon',
                 'ib',
@@ -273,29 +273,29 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
         correspondace_grade_corps = read_correspondace_grade_corps()
         grille = grille.merge(correspondace_grade_corps, on = 'code_grade_NEG', how = 'left')
         grille[[
-            'num_meme_corps',        # int64
-            'corps',                 # object  To translate from unicode
-            'num_meme_filiere',      # int64
-            'filiere',               # object  To translate from unicode
-            'code_grade_NEG',        # object
-            'code_FP',               # int64unidecode.unidecode
-            'libelle_FP',            # object
-            'code_etat_grade',       # int64
-            'libelle_grade_NEG',     # object
+            'annee_effet_grille',    # int32
             'categh',                # object
-            'echelle',               # object
-            'date_debut_grade',      # datetime64[ns]
-            'date_fin_grade',        # datetime64[ns]
+            'code_etat_grade',       # int64
+            'code_FP',               # int64unidecode.unidecode
+            'code_grade_NEG',        # object
             'code_grade_NETNEH',     # object
-            # 'type_grade',            # object VIDE
-            'libelle_NETNEH',        # object  To translate from unicode
+            'corps',                 # object  To translate from unicode
+            'date_debut_grade',      # datetime64[ns]
             'date_effet_grille',     # datetime64[ns]
+            'date_fin_grade',        # datetime64[ns]
+            'echelle',               # object
             'echelon',               # int32
+            'filiere',               # object  To translate from unicode
             'ib',                    # int32
+            'libelle_FP',            # object
+            'libelle_grade_NEG',     # object
+            'libelle_NETNEH',        # object  To translate from unicode
             'max_mois',              # int32
             'min_mois',              # int32
             'moy_mois',              # int32
-            'annee_effet_grille',    # int32
+            'num_meme_corps',        # int64
+            'num_meme_filiere',      # int64
+            # 'type_grade',            # object VIDE
             ]].to_hdf(hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
         return True
     else:

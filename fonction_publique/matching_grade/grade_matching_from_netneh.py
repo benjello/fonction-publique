@@ -86,7 +86,15 @@ selection: """)
     # TODO: ne pas prendre le min mais toutes les grilles possibles avec ce garde NETNEH.
     grilles = grilles.loc[
         grilles.libelle_NETNEH == grade,
-        ['date_debut_grade', 'date_fin_grade', 'libelle_NETNEH', 'libelle_grade_NEG', 'code_grade_NEG', 'libelle_FP']
+        [
+            'code_grade_NEG',
+            'code_grade_NETNEH',
+            'date_debut_grade',
+            'date_fin_grade',
+            'libelle_FP',
+            'libelle_grade_NEG',
+            'libelle_NETNEH',
+            ]
         ].drop_duplicates().sort_values('date_debut_grade').reset_index(drop = True)
 
     if len(grilles) == 1:
@@ -113,7 +121,9 @@ selection: """)
     else:
         while True:
             print("\nGrades possibles:\n{}".format(
-                grilles[['date_debut_grade', 'date_fin_grade', 'libelle_NETNEH', 'code_grade_NEG']]))
+                grilles[
+                    ['date_debut_grade', 'date_fin_grade', 'libelle_NETNEH', 'code_grade_NEG', 'code_grade_NETNEH']
+                    ]))
             selection2 = raw_input("""
 NOMBRE, quitter (q)
 selection: """)
@@ -223,6 +233,7 @@ def main():
         # annee = 2014
         subset = [
             'code_grade_NEG',
+            'code_grade_NETNEH',
             'date_debut_grade',
             'date_fin_grade',
             'libelle_FP',

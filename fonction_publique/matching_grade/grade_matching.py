@@ -77,7 +77,6 @@ def get_grilles_cleaned(annee = None, versant = None, force_rebuild = False, sub
     Correction des doublons dans la grille initiale
     TODO remove when cleaning
     '''
-
     if subset is None:
         subset = [
             'code_grade_NEG',
