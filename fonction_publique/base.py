@@ -46,7 +46,7 @@ grilles_txt_path = os.path.join(
 
 focus_grille_xlsx_path = os.path.join(
     grilles_path,
-    "correspondance_neg_netneh_2018_01_17.xlsx",
+    "correspondance_neg_netneh_2018_01_19.xlsx",
     )
 
 grilles_hdf_path = os.path.join(
