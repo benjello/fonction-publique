@@ -39,6 +39,14 @@ L'initialisation du programme fournit ici se fait de la manière suivante:
     - Données (`[data]`) : emplacement des données initiales (raw) et des données retravaillée (clean). Inutiles sid onnées sur les libellés emplois ont été transmises.
     - Correspondances (`[correspondances]`): emplacement du dossier où l'on souhaite conserver la table de correspondance.
 
+Normalement un ficheir `config.ini` contenant les lignes suivantes devrait convenir:
+
+```
+[correspondances]
+h5 = /home/benjello/data/CNRACL/grade_matching/correspondances.h5
+libelles_emploi_directory = /home/benjello/data/CNRACL/grade_matching
+```
+
 ## Programmes d'imputation des grade pour les libellés observés entre 2000 et 2014.
 
 inputs :
