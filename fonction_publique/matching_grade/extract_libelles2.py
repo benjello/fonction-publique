@@ -20,18 +20,29 @@ libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_direc
 
 
 def load_libelles(data_path = None, debug = False):
-    libemploi = get_careers(variable = 'libemploi', data_path = data_path, debug = debug)
+    libemploi   = get_careers(variable = 'libemploi', data_path = data_path, debug = debug)
+    lib_cir     = get_careers(variable = 'lib_cir', data_path = data_path, debug = debug)
+    lib_netneh  = get_careers(variable = 'lib_netneh', data_path = data_path, debug = debug)
     libemploi['libemploi_slugified'] = libemploi.libemploi.apply(slugify, separator = "_")
     statut = get_careers(variable = 'f_coll', data_path = data_path, debug = debug)
     statut['statut'] = statut['f_coll']
+    libemploi = libemploi.merge(lib_cir, 
+                                how = 'inner',
+                                on = ["ident", "annee"])
+    libemploi = libemploi.merge(lib_netneh, 
+                                how = 'inner',
+                                on = ["ident", "annee"])
     libemploi = (libemploi
         .merge(
             statut.query("statut in ['T', 'H']"),
             how = 'inner',
             )
         )
-    libemploi = libemploi[libemploi.libemploi != '']
-    return libemploi
+   # Condition de filtrage des libellés cf. Isabelle Bridenne:    
+   # " il faut sélectionner  if lib_cir_AAAA^= « » and lib_netneh=  « »    ; ce sont les cas non redressés."
+    filtered_libemploi = libemploi.loc[(libemploi.lib_cir != '') & (libemploi.lib_netneh == '')]     
+    filtered_libemploi = filtered_libemploi.loc[:, ["ident", "libemploi", "annee", "libemploi_slugified"]]
+    return filtered_libemploi
 
 
 def save_subset_libelle(load_path = None, save_path = None):
@@ -53,22 +64,26 @@ def save_subset_libelle(load_path = None, save_path = None):
     sub_correspondance.sort_index().to_hdf(save_slugified_file, 'correspondance_libemploi_slug')
 
 
-def main(clean_data = False, debug = False, ):
+def main(clean_data = False, debug = False):
     # Etape 1: data_cleaning
     if clean_data:
+        logging.basicConfig(level=logging.INFO)
         raw_data_cleaner.main(
             raw_directory_path = os.path.join(raw_directory_path, "csv"),
-            subset_data = ["export2_g1940_1959.csv", "export2_g1960_1969.csv", "export2_g1970_1979.csv", "export2_g1980.csv"],
-            subset_var = ["f_coll","libemploi"],
+            subset_data = ["export_g1940_g1949.csv", "export_g1950_g1959.csv",
+                           "export_g1960_g1965.csv", "export_g1966_g1969.csv",
+                           "export_g1970_g1979.csv", "export_g1980_g1996.csv"],
+            subset_var = ["f_coll","libemploi", "lib_cir", "lib_netneh"],
             clean_directory_path = clean_directory_path,
             debug = debug,
-            chunksize = DEFAULT_CHUNKSIZE,
+            chunksize = None,
             year_min = 2000,
             )
     # Etape 2: extract_libelles and merge
-    data_to_extract = ["2_1940_carrieres.h5", "2_1960_carrieres.h5", "2_1970_carrieres.h5", "2_1980_carrieres.h5"]
+    data_to_extract = ["1940_1949_carrieres.h5", "1950_1959_carrieres.h5", "1960_1965_carrieres.h5", 
+                       "1966_1969_carrieres.h5", "1970_1979_carrieres.h5", "1980_1996_carrieres.h5"]
     for data_path in data_to_extract:
-        log.info("Processing data {}".format(data_path))
+        print("Processing data {}".format(data_path))
         libemploi = load_libelles(data_path = data_path, debug = debug)
         if data_path == data_to_extract[0]:
             libemploi_all = libemploi
@@ -79,7 +94,7 @@ def main(clean_data = False, debug = False, ):
     libemploi_h5 = os.path.join(libelles_emploi_directory, "libemploi.h5")
     libemploi_all.rename(columns = dict(statut = 'versant'), inplace = True)
     libemplois = libemploi_all.groupby([u'annee', u'versant'])['libemploi_slugified'].value_counts()
-    log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
+    print("Generating and saving libellés emploi to {}".format(libemploi_h5))
     libemplois.to_hdf(libemploi_h5, 'libemploi')
 
     # Etape 4: save corresponding bw slug and normal libemploi
@@ -87,7 +102,7 @@ def main(clean_data = False, debug = False, ):
     correspondance_libemploi_slug = (libemploi_all[[u'versant', u'libemploi', u'annee', u'libemploi_slugified']]
         .drop_duplicates()
         )
-    correspondance_libemploi_slug.to_hdf(correspondance_libemploi_slug_h5, 'correspondance_libemploi_slug')
+    correspondance_libemploi_slug.to_hdf(correspondance_libemploi_slug_h5, 'correspondance_libemploi_slug', format = "table")
 
 if __name__ == "__main__":
-    sys.exit(main(clean_data = True, debug = False))
+    sys.exit(main(clean_data = False, debug = False))

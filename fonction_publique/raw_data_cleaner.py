@@ -178,6 +178,11 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             quarterly = False,
             ),
         dict(
+            variable = 'lib_cir',
+            years_range = range(max(year_min, 2010), year_data),
+            quarterly = False,
+            ),                
+        dict(
             variable = 'libemploi',
             years_range = range(max(year_min, 2000), year_data),
             quarterly = False,
