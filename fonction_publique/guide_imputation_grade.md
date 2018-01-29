@@ -13,7 +13,10 @@ Liste des étapes pour la mise en oeuvre du matching
 
 ## Initialisation : installation de Python et gestion des chemins
 
-1. Installation de Python et des paquets idoines (fait sur l'ordinateur de Laurent)
+### Installation de Python et des paquets idoines 
+
+(déjà fait sur l'ordinateur de Laurent)
+
 L'utilisation du programme nécessite l'installation de python ainsi que l'installation à la main des packages suivants:
 - fuzzywuzzy
 - python-Levenshstein
@@ -34,12 +37,12 @@ L'initialisation du programme fournit ici se fait de la manière suivante:
     - se rendre dans le répertoire fonction-publique
     - installer le paquet fonction_publique : `pip install .`
 
-2. Gestion des chemins
+### Gestion des chemins
     Doivent être précisés dans un fichier config.ini (à partir du config_template.ini) les chemins suivants:
     - Données (`[data]`) : emplacement des données initiales (raw) et des données retravaillée (clean). Inutiles sid onnées sur les libellés emplois ont été transmises.
     - Correspondances (`[correspondances]`): emplacement du dossier où l'on souhaite conserver la table de correspondance.
 
-Normalement un ficheir `config.ini` contenant les lignes suivantes devrait convenir:
+Normalement un fichier `config.ini` contenant les lignes suivantes devrait convenir:
 
 ```
 [correspondances]
