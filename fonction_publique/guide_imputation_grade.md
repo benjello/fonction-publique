@@ -43,8 +43,8 @@ Normalement un ficheir `config.ini` contenant les lignes suivantes devrait conve
 
 ```
 [correspondances]
-h5 = /home/benjello/data/CNRACL/grade_matching/correspondances.h5
-libelles_emploi_directory = /home/benjello/data/CNRACL/grade_matching
+h5 = /chemin/vers/le/fichier/correspondances.h5
+libelles_emploi_directory = /chemin/vers/le/repertoire/contenant/les/fichiers/libelles/
 ```
 
 ## Programmes d'imputation des grade pour les libellés observés entre 2000 et 2014.
