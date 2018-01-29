@@ -4,7 +4,7 @@
 
 Objectif du programme: obtenir les grades correspondants aux libellés remplis à la main pour les années 2000 à 2014.
 
-Toutes les manipulations de l'utilisateur se font dans le terminal (invite de commande http://fr.wikihow.com/changer-de-r%C3%A9pertoire-dans-le-mode-de-commande)
+Toutes les manipulations de l'utilisateur se font dans le terminal ([invite de commande](http://fr.wikihow.com/changer-de-r%C3%A9pertoire-dans-le-mode-de-commande))
 
 Liste des étapes pour la mise en oeuvre du matching
   - Initialisation: installation de l'environnement de travail (Python, chemins)
