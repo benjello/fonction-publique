@@ -21,9 +21,6 @@ from fonction_publique.matching_grade.grade_matching import (
     )
 
 
-pd.options.display.max_colwidth = 0
-pd.options.display.max_rows = 999
-
 log = logging.getLogger(__name__)
 
 

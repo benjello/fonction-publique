@@ -82,6 +82,15 @@ except ConfigParser.NoOptionError:
     log.info('Entry simulation in section data is absent. simulation_directory_path is not set')
     simulation_directory_path = None
 
+# display options
+try:
+    LIBELLES_MAX_ROWS = int(parser.get('display', 'libelles_max_rows'))
+except ConfigParser.NoSectionError as e:
+    log.info(e)
+    log.info('LIBELLES_MAX_ROWS is set tp 1000 (non binding)')
+    LIBELLES_MAX_ROWS = 1000
+
+assert isinstance(LIBELLES_MAX_ROWS, int)
 
 # Options:
 DEFAULT_CHUNKSIZE = 30000
@@ -182,7 +191,8 @@ def get_careers(variable = None, variables = None, stop = None, data_path = None
                 )
 
 
-def add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year = 2015):  # FIXME deal with late policy implementation
+def add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year = 2015):
+    # FIXME deal with late policy implementation
     """Add grilles variables to observation according to their grade (code_grade_NETNEH == c_cir)
     """
     log.info('Add grilles variables')

@@ -27,9 +27,6 @@ from fonction_publique.base import get_careers, parser, timing
 from fonction_publique.merge_careers_and_legislation import get_grilles
 
 
-pd.options.display.max_colwidth = 0
-pd.options.display.max_rows = 999
-
 log = logging.getLogger(__name__)
 
 

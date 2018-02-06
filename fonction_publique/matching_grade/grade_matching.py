@@ -15,11 +15,10 @@ import pandas as pd
 from slugify import slugify
 from fuzzywuzzy import process
 
-from fonction_publique.base import get_careers, parser
+
+from fonction_publique.base import get_careers, parser, LIBELLES_MAX_ROWS
 from fonction_publique.merge_careers_and_legislation import get_grilles
 
-pd.options.display.max_colwidth = 0
-pd.options.display.max_rows = 999
 
 log = logging.getLogger(__name__)
 
@@ -201,7 +200,12 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
 
     log.info("Recherche de libellés emploi correspondant à {}:\n slug: {}\n score >= {}".format(
         query, slugified_query, score_cutoff))
-    return pd.DataFrame.from_records(results, columns = ['libelle_emploi', 'score'])
+
+    df = pd.DataFrame.from_records(results, columns = ['libelle_emploi', 'score'])
+    if len(df) < LIBELLES_MAX_ROWS:
+        return df
+    else:
+        return df.iloc[0:LIBELLES_MAX_ROWS]
 
 
 def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Rename select_grade_or_corps
@@ -480,24 +484,29 @@ selection: """)
                 print('Plage de valeurs incorrecte.')
                 continue
             problem = False
-            for s in selection.split(","):
-                if ":" in s:
-                    if s.split(":")[0] == "" or s.split(":")[1] == "":
+            try:
+                for s in selection.split(","):
+                    if ":" in s:
+                        if s.split(":")[0] == "" or s.split(":")[1] == "":
+                            problem = True
+                            break
+                        start = int(s.split(":")[0])
+                        stop = int(s.split(":")[1])
+                    else:
+                        start = stop = int(s)
+
+                    if not (
+                        libelles_emploi_additionnels.index[0] <=
+                        start <=
+                        stop <=
+                        libelles_emploi_additionnels.index[-1:]
+                            ):
                         problem = True
                         break
-                    start = int(s.split(":")[0])
-                    stop = int(s.split(":")[1])
-                else:
-                    start = stop = int(s)
 
-                if not (
-                    libelles_emploi_additionnels.index[0] <=
-                    start <=
-                    stop <=
-                    libelles_emploi_additionnels.index[-1:]
-                        ):
-                    problem = True
-                    break
+            except Exception as e:
+                log.debug('Intercepting exection:\n{}'.format(e))
+                problem = True
 
             if problem:
                 print('Plage de valeurs incorrecte.')

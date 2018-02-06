@@ -27,8 +27,11 @@ from fonction_publique.matching_grade.grade_matching import (
     )
 
 
-pd.options.display.max_colwidth = 0
-pd.options.display.max_rows = 999
+pd.set_option('max_colwidth', 0)
+pd.set_option('display.width', 120)
+pd.set_option('display.max_rows', 999)
+pd.set_option('display.large_repr', 'info')
+
 
 log = logging.getLogger(__name__)
 
