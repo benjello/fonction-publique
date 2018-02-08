@@ -411,7 +411,7 @@ def select_libelles_emploi_from_grade_quadruplet(grade_quadruplet = None, libemp
 
     libelles_emploi_deja_renseignes_dataframe = get_correspondance_data_frame(which = 'grade', netneh = True)
     libelles_emploi_deja_renseignes = (libelles_emploi_deja_renseignes_dataframe
-        .query("(date_fin_grade == @date_fin_grade) & (date_debut_grade == @date_debut_grade) &  (versant == @versant)")
+        .query("(date_fin_grade >= @date_fin_grade) & (date_debut_grade <= @date_debut_grade) & (versant == @versant)")
         ).libelle.tolist()
     #
     libelles_purges = list(
