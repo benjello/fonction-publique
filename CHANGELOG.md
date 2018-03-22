@@ -2,9 +2,12 @@
 
 ## 0.3.4
 
+* Add export_correspondances script
+
+## 0.3.4
+
 * Fix bug in year handling in selected libelles
 * Remove (comment out) some obsolete entry points
-
 
 ## 0.3.3
 
