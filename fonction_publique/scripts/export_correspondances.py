@@ -45,7 +45,7 @@ def main():
     log.info('Start converting data in {} to {}'.format(args.source, args.target))
 
     if args.format == 'csv':
-        df.to_csv(args.target, sep = args.separator)
+        df.to_csv(args.target, sep = args.separator, decimal = args.decimal)
     else:
         df.to_excel(args.target)
 
