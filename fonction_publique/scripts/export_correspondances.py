@@ -26,8 +26,9 @@ def main():
         help = 'path of the source correspondances file')
     parser.add_argument('-t', '--target',
         default = os.path.join(libelles_emploi_directory, 'correspondances.csv'),
-        help = 'path of the conversion result i.e. csv or xls file')
-    parser.add_argument('--format', default = 'csv', choices = ['csv', 'xls'], help = 'target file format')
+        help = 'path of the conversion result i.e. csv file')
+    # parser.add_argument('--format', default = 'csv', choices = ['csv', 'xls'], help = 'target file format')
+    parser.add_argument('--force', action = 'store_true', default = False, help = "force overwrite ")
     parser.add_argument('--separator', default = ';', choices = [',', ';'], help = 'separator (csv only)')
     parser.add_argument('--decimal', default = '.', choices = [',', '.'], help = 'decimal mark (csv only)')
     parser.add_argument('-v', '--verbose', action = 'store_true', default = False, help = "increase output verbosity")
@@ -37,17 +38,21 @@ def main():
 
     assert args.separator != args.decimal, "Separator and decimal mark cannot be the same: {}".args.decimal
     df = pd.read_hdf(correspondance_data_frame_path)
-    if args.format == 'csv':
-        assert args.target.endswith('.csv'), "Target file name should end with '.csv'"
-    else:
-        assert args.target.endswith('.xls'), "Target file name should end with '.xls'"
+    # if args.format == 'csv':
+    assert args.target.endswith('.csv'), "Target file name should end with '.csv'"
+    # else:
+    #     assert args.target.endswith('.xls'), "Target file name should end with '.xls'"
 
     log.info('Start converting data in {} to {}'.format(args.source, args.target))
 
-    if args.format == 'csv':
-        df.to_csv(args.target, sep = args.separator, decimal = args.decimal)
+    if os.path.exists(args.target):
+        log.warn("{} already exists.\nUse -t option to specify a new file or use the --force option to overwrite existing file".format(args.target))
     else:
-        df.to_excel(args.target)
+    # if args.format == 'csv':
+        df.to_csv(args.target, sep = args.separator, decimal = args.decimal)
+    # else:
+    #     df.to_excel(args.target)
+    return
 
 
 if __name__ == "__main__":
