@@ -45,14 +45,13 @@ def main():
 
     log.info('Start converting data in {} to {}'.format(args.source, args.target))
 
-    if os.path.exists(args.target):
+    if os.path.exists(args.target) and not args.force:
         log.warn("{} already exists.\nUse -t option to specify a new file or use the --force option to overwrite existing file".format(args.target))
     else:
     # if args.format == 'csv':
-        df.to_csv(args.target, sep = args.separator, decimal = args.decimal)
+        df.to_csv(args.target, sep = args.separator, decimal = args.decimal, index = False)
     # else:
     #     df.to_excel(args.target)
-    return
 
 
 if __name__ == "__main__":
