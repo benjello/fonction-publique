@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'Fonction-Publique',
-    version = '0.3.4',
+    version = '0.3.5',
     author = 'IPP Team',
     author_email = 'mahdi.benjelloul@ipp.eu',
     classifiers = [
@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'clean_grilles=fonction_publique.scripts.clean_grilles:main',
             'clean_raw_carreer=fonction_publique.scripts.clean_raw_career:main',
+            'export_correspondances=fonction_publique.scripts.export_correspondances:main',
             'generate_data=fonction_publique.scripts.generate_data:main',
             # 'grade_matching_from_neg=fonction_publique.matching_grade.grade_matching_from_neg:main',
             'grade_matching_from_netneh=fonction_publique.matching_grade.grade_matching_from_netneh:main',
