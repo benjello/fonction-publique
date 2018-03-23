@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'Fonction-Publique',
-    version = '0.3.5',
+    version = '0.3.6',
     author = 'IPP Team',
     author_email = 'mahdi.benjelloul@ipp.eu',
     classifiers = [
