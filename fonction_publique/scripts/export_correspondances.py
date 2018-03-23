@@ -43,7 +43,7 @@ def main():
         [['libemploi', 'libemploi_slugified']]
         .drop_duplicates()
         )
-    output = correspondances.merge(correspondance_libemploi_slug).head(10)
+    output = correspondances.merge(correspondance_libemploi_slug)
     log.info('Merging with {} to {}'.format(args.source, args.target))
 
     assert args.target.endswith('.csv'), "Target file name should end with '.csv'"
